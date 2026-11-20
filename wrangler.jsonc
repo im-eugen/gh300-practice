@@ -1,0 +1,10 @@
+{
+  // Static site on Cloudflare Workers: no Worker code, just the files in ./public.
+  "name": "gh300-practice",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./public"
+  },
+  // Serve only on your custom domain, not on *.workers.dev
+  "workers_dev": false
+}
