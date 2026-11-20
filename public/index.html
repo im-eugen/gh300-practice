@@ -1251,6 +1251,22 @@ const KEYS = ["A","B","C","D","E"];
 /* ---------- session ---------- */
 let S = null, tick = null;
 
+/* ---------- history: the phone's back button moves through the app instead of leaving it ---------- */
+let pendingLand = null;   // where to land after rewinding past a finished or abandoned session
+function nav(method, state, url){
+  try { history[method](state, "", url); }
+  catch(e){ try { history[method](state, ""); } catch(e2){} }   // sandboxed previews refuse URL changes
+}
+const plainUrl = () => location.pathname + location.search;
+function sessionState(screen){ return {screen, sid:S.sid, idx:S.idx, d:S.depth}; }
+function pushSession(screen){ S.depth++; nav("pushState", sessionState(screen), plainUrl()); }
+function leaveSession(depth, land){
+  // drop the session's history entries so Back can't return into a finished exam
+  if(depth > 0){ pendingLand = land; history.go(-depth); }
+  else if(land==="results") nav("pushState", {screen:"results"}, plainUrl());
+}
+function currentScreen(){ return ["exam","review","results","about"].find(id=>!$(id).classList.contains("hidden")) || "home"; }
+
 function makeItem(q){
   const it = {qid:q.id, picked:[], flagged:false, checked:false, ms:0};
   if(q.t==="dd"){ it.order = q.lines.map(l=> q.yn ? [0,1] : shuffle(l.o.map((_,i)=>i))); it.picked = q.lines.map(()=>null); }
@@ -1279,6 +1295,7 @@ function startSession(mode, questions, title){
   $("toReview").textContent = mode==="exam" ? "Review and submit" : "Finish and see summary";
   clearInterval(tick); tick = setInterval(updateTimer, 500); updateTimer();
   show("exam"); renderQ(); renderSeats();
+  S.sid = Date.now(); S.depth = 0; pushSession("exam");
 }
 
 function buildExam(){
@@ -1312,7 +1329,7 @@ function updateTimer(){
 }
 
 function stamp(){ const it=S.items[S.idx]; const now=Date.now(); it.ms += now - S.qStart; S.qStart = now; }
-function go(i){ if(i<0||i>=S.items.length) return; stamp(); S.idx=i; renderQ(); renderSeats(); }
+function go(i, fromHistory){ if(i<0||i>=S.items.length) return; const same = i===S.idx; stamp(); S.idx=i; renderQ(); renderSeats(); window.scrollTo(0,0); if(!fromHistory && !same) pushSession("exam"); }
 
 function renderQ(){
   const it = S.items[S.idx], q = BANK[it.qid], multi = !q.t && q.a.length>1;
@@ -1467,7 +1484,7 @@ function renderSeats(){
   $("seats").querySelectorAll(".seat").forEach(b=> b.onclick = ()=>{ go(+b.dataset.i); closeMapOnPhone(); });
 }
 
-function openReview(){
+function openReview(fromHistory){
   stamp();
   const un = S.items.map((it,i)=>({it,i})).filter(x=>!isDone(x.it));
   const fl = S.items.map((it,i)=>({it,i})).filter(x=>x.it.flagged);
@@ -1479,6 +1496,7 @@ function openReview(){
   }).join("") : `<p class="empty">Nothing unanswered or flagged.</p>`;
   $("reviewList").querySelectorAll(".review-row").forEach(b=> b.onclick=()=>{ show("exam"); S.qStart=Date.now(); go(+b.dataset.i); });
   show("review");
+  if(!fromHistory) pushSession("review");
 }
 
 /* ---------- results ---------- */
@@ -1486,6 +1504,7 @@ let lastResult = null;
 
 function finish(timeUp){
   stamp(); clearInterval(tick);
+  const depth = S.depth || 0;
   const db = load();
   const rows = S.items.map(it=>{
     const q = BANK[it.qid]; const ok = isOk(q, it);
@@ -1503,6 +1522,7 @@ function finish(timeUp){
   lastResult = {rows, byD, right, total, pct, timeUp, elapsed, mode:S.mode};
   S = null;
   renderResults();
+  leaveSession(depth, "results");
 }
 
 function renderResults(){
@@ -1649,8 +1669,8 @@ $("startWeak").onclick = ()=>{
 };
 $("mapToggle").onclick = ()=>{ const sm=$("mapToggle").closest(".seatmap"); const open=!sm.classList.contains("open"); sm.classList.toggle("open", open); $("mapToggle").setAttribute("aria-expanded", open); };
 $("toReview").onclick = ()=> S.mode==="exam" ? openReview() : finish(false);
-$("quit").onclick = ()=>{ if(confirm("Leave this session? Your answers won’t be saved.")){ clearInterval(tick); S=null; renderHome(); show("home"); } };
-$("backToExam").onclick = ()=>{ show("exam"); S.qStart=Date.now(); renderQ(); renderSeats(); };
+$("quit").onclick = ()=>{ if(confirm("Leave this session? Your answers won’t be saved.")){ const d=S.depth; clearInterval(tick); S=null; renderHome(); show("home"); leaveSession(d, "home"); } };
+$("backToExam").onclick = ()=>{ if(history.state && history.state.screen==="review") history.back(); else { show("exam"); S.qStart=Date.now(); renderQ(); renderSeats(); } };
 $("submitExam").onclick = ()=>{
   const un = S.items.filter(it=>!isDone(it)).length;
   if(un && !confirm(`${un} question${un>1?"s are":" is"} unanswered and will count as wrong. Submit anyway?`)) return;
@@ -1660,7 +1680,7 @@ $("retryMissed").onclick = ()=>{
   const qs = lastResult.rows.filter(r=>!r.ok).map(r=>r.q);
   startSession("practice", shuffle(qs), "Retry missed questions");
 };
-$("homeBtn").onclick = ()=>{ renderHome(); show("home"); };
+$("homeBtn").onclick = ()=>{ renderHome(); show("home"); nav("pushState", {screen:"home"}, plainUrl()); };
 
 document.addEventListener("keydown", e=>{
   if(!S || $("exam").classList.contains("hidden")) return;
@@ -1675,22 +1695,49 @@ document.addEventListener("keydown", e=>{
   else if(e.key.toLowerCase()==="f"){ it.flagged=!it.flagged; renderQ(); renderSeats(); }
   else if(e.key==="Enter" && $("checkBtn") && !$("checkBtn").disabled){ $("checkBtn").click(); }
 });
-/* updating the address bar is a nice-to-have; sandboxed previews (about:srcdoc) refuse it, so never let it break navigation */
-function setHash(h){ try { history.replaceState(null, "", h || location.pathname + location.search); } catch(e){} }
-function openAbout(){ show("about"); if(location.hash!=="#about") setHash("#about"); $("aboutBack").focus(); }
-function closeAbout(){ setHash(""); renderHome(); show("home"); }
-$("aboutLink").onclick = openAbout; $("aboutLink2").onclick = openAbout; $("aboutBack").onclick = closeAbout;
+function openAbout(fromHistory){ show("about"); if(!fromHistory) nav("pushState", {screen:"about"}, "#about"); $("aboutBack").focus(); }
+function closeAbout(){ if(history.state && history.state.screen==="about") history.back(); else { renderHome(); show("home"); nav("replaceState", {screen:"home"}, plainUrl()); } }
+$("aboutLink").onclick = ()=>openAbout(); $("aboutLink2").onclick = ()=>openAbout(); $("aboutBack").onclick = closeAbout;
 $("clearData").onclick = ()=>{
   if(!confirm("Delete all saved attempts and most-missed questions from this browser?")) return;
   try { localStorage.removeItem(STORE_KEY); } catch(e){}
   $("clearMsg").textContent = "Deleted.";
 };
-window.addEventListener("hashchange", ()=>{ if(location.hash==="#about" && !S) openAbout(); else if(!S) { renderHome(); show("home"); } });
+window.addEventListener("popstate", e=>{
+  const st = e.state || {screen: location.hash==="#about" ? "about" : "home"};
+  if(pendingLand){
+    const land = pendingLand; pendingLand = null;
+    if(land==="results"){ show("results"); nav("pushState", {screen:"results"}, plainUrl()); }
+    else { renderHome(); show("home"); nav("replaceState", {screen:"home"}, plainUrl()); }
+    return;
+  }
+  if(S){
+    if((st.screen==="exam" || st.screen==="review") && st.sid===S.sid){
+      S.depth = st.d;
+      if(st.screen==="review" && S.mode==="exam") openReview(true);
+      else { show("exam"); S.qStart = Date.now(); go(st.idx, true); }
+      return;
+    }
+    // Back past the first question: ask before throwing the session away
+    if(!confirm("Leave this session? Your answers won’t be saved.")){
+      nav("pushState", sessionState(currentScreen()==="review" ? "review" : "exam"), plainUrl());
+      return;
+    }
+    clearInterval(tick); S = null;
+  }
+  if(st.screen==="about"){ openAbout(true); return; }
+  if(st.screen==="results" && lastResult){ show("results"); return; }
+  renderHome(); show("home");
+  if(st.screen!=="home") nav("replaceState", {screen:"home"}, plainUrl());
+});
 window.addEventListener("beforeunload", e=>{ if(S){ e.preventDefault(); e.returnValue=""; } });
 
 if(LINKEDIN_URL){ document.querySelectorAll(".li-link").forEach(a=>a.href=LINKEDIN_URL); document.querySelectorAll(".li-wrap").forEach(w=>w.hidden=false); }
 renderHome();
-if(location.hash==="#about") openAbout();
+// the first entry is always home, so Back from a deep link to #about stays on the site
+const startOnAbout = location.hash==="#about";
+nav("replaceState", {screen:"home"}, plainUrl());
+if(startOnAbout) openAbout();
 </script>
 </body>
 </html>
