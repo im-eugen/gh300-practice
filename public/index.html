@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
@@ -198,6 +198,7 @@ h2.section{font-size:1.25rem; margin:30px 0 12px}
 /* scenario questions: build the sequence */
 .ord{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:0 0 20px}
 .ord h3{font-size:.95rem; margin:0 0 8px; color:var(--muted)}
+.ord h3 .placed{font-weight:400; margin-left:6px}
 .ord-zone{list-style:none; margin:0; padding:10px; min-height:140px; border-radius:10px; display:grid; gap:8px; align-content:start}
 .ord-pool{background:var(--sunk); border:1.5px dashed var(--line)}
 .ord-ans{background:var(--surface); border:1.5px solid var(--line)}
@@ -304,7 +305,7 @@ input[type=checkbox]{accent-color:var(--accent)}
 .ans .qtext{font-size:1.12rem}
 .score{font-size:5.2rem}
 .verdict h1{font-size:2rem}
-@media (max-width:860px){ .bp-legend{grid-template-columns:1fr 1fr} }
+@media (max-width:860px){ .bp-legend{grid-template-columns:1fr 1fr} .modes{grid-template-columns:1fr} }
 @media (max-width:640px){
   .wrap{padding-top:28px}
   .topbar{margin-top:-28px}
@@ -314,6 +315,104 @@ input[type=checkbox]{accent-color:var(--accent)}
   .bp-legend{grid-template-columns:1fr}
   .qcard{padding:22px}
   .qtext{font-size:1.2rem}
+}
+
+/* ---------- phones ---------- */
+html{-webkit-text-size-adjust:100%}
+button, .opt, .tok-add, select{-webkit-tap-highlight-color:transparent}
+.map-toggle{display:none}
+.opt input{position:absolute; opacity:0; width:1px; height:1px; pointer-events:none}
+.opt{position:relative}
+.opt:has(input:focus-visible){outline:3px solid var(--accent); outline-offset:2px}
+.opt.sel{box-shadow:inset 0 0 0 1px var(--accent)}
+code{overflow-wrap:anywhere}
+.answers > *, .review-list > *, .two > *{min-width:0}
+.review-row{grid-template-columns:3rem minmax(0,1fr) auto}
+@media (max-width:640px){
+  body{font-size:16px}
+  .wrap{padding:24px 12px calc(40px + env(safe-area-inset-bottom))}
+  .panel{padding:18px 16px}
+  .panel h2{font-size:1.3rem}
+  .home-head h1{font-size:2.2rem}
+  .bank-count{display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 10px; padding-top:0}
+  .bank-count b{display:inline; font-size:1.6rem}
+  .setpick{width:100%; margin-top:6px}
+  .setpick select{flex:1}
+  .exam-panel .facts{gap:6px}
+  .exam-panel .facts div{padding:8px 10px}
+  .exam-panel .facts b{font-size:1.4rem}
+  .row .btn{flex:1 1 auto}
+  .domains small{margin-left:44px}
+  /* get people to the start buttons sooner */
+  #home:not(.hidden){display:flex; flex-direction:column}
+  #home .modes{order:1; margin-top:20px}
+  .exam-panel .btn.primary{align-self:stretch; min-height:48px}
+  .exam-panel .fine{padding-top:14px}
+  #home .blueprint{order:2; margin:28px 0 0}
+  #home .history{order:3; margin-top:26px}
+  #home .site-foot{order:4}
+  select{font-size:16px}                        /* stops iOS zooming into the field */
+  /* exam screen */
+  .topbar{margin:-24px -12px 12px; padding:calc(10px + env(safe-area-inset-top)) 12px 10px}
+  .topbar .title{font-size:1.02rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0}
+  .timer{font-size:1.05rem; flex:none}
+  .exam-grid{gap:12px}
+  .qcard{padding:18px 16px 0; border-radius:14px}
+  .qmeta{flex-direction:column; gap:2px; margin-bottom:10px}
+  .qtext{font-size:1.16rem}
+  .qhint{font-size:.9rem; margin-bottom:12px}
+  .opt{padding:12px; gap:12px}
+  .opt .key{width:1.9em; height:1.9em; font-size:.85rem}
+  .opts{gap:8px}
+  /* bottom action bar, within thumb reach */
+  .qnav{position:sticky; bottom:0; z-index:4; display:grid; grid-template-columns:auto auto minmax(0,1fr); gap:8px;
+        margin:16px -16px 0; padding:10px 16px calc(10px + env(safe-area-inset-bottom));
+        background:var(--surface); border-top:1px solid var(--line); border-radius:0 0 14px 14px}
+  .qnav .row{display:contents}
+  .qnav .btn{padding:.7em .9em; min-height:46px}
+  .qnav .btn.primary{width:100%}
+  .lg{display:none}
+  .feedback{margin-bottom:4px}
+  /* dropdown and yes/no lines */
+  .dd li{padding:12px; gap:8px}
+  .dd select{font-size:16px; padding:.55em .6em}
+  .dd.is-yn li{grid-template-columns:1fr}
+  .yn{justify-self:stretch; display:flex}
+  .yn button{flex:1; padding:.6em 0; min-height:44px}
+  /* ordering: answer first, steps below */
+  .ord{display:flex; flex-direction:column; gap:14px}
+  .ord > div:last-child{order:-1}
+  .ord-zone{min-height:0; padding:8px}
+  .tok{flex-wrap:wrap; padding:10px}
+  .ord-ans .tok .ctl{width:100%; justify-content:flex-end}
+  .tok .ctl button{width:44px; height:36px; font-size:1rem}
+  .tok-add{padding:4px 0}
+  /* question map: collapsed behind a toggle */
+  .seatmap{padding:0; position:static}
+  .map-head, .seatmap > .sub, .kbd{display:none}
+  .map-toggle{display:flex; width:100%; align-items:center; justify-content:space-between; gap:10px; padding:14px 16px; background:none; border:none; text-align:left; cursor:pointer}
+  .map-toggle .sub{display:block; color:var(--muted); font-size:.85rem; font-weight:400}
+  .chev{width:10px; height:10px; border-right:2px solid var(--muted); border-bottom:2px solid var(--muted); transform:rotate(45deg); margin-top:-4px; flex:none}
+  .seatmap.open .chev{transform:rotate(-135deg); margin-top:4px}
+  .seats, .legend{display:none; padding:0 16px}
+  .seatmap.open .seats{display:grid; grid-template-columns:repeat(8,1fr); gap:6px}
+  .seatmap.open .legend{display:flex; padding-bottom:4px}
+  .seat{font-size:.8rem}
+  .seatmap .btn{width:calc(100% - 32px); margin:10px 16px 0; min-height:44px}
+  .seatmap .btn:last-child, .seatmap .btn#quit{margin-bottom:16px}
+  /* review */
+  .review-row{grid-template-columns:2.2rem minmax(0,1fr); padding:10px; font-size:.95rem}
+  .review-row > .row{grid-column:2}
+  /* results */
+  .score{font-size:3.6rem}
+  .verdict{gap:6px}
+  .verdict h1{font-size:1.5rem}
+  .ans{padding:14px}
+  .ans li{flex-wrap:wrap; gap:2px 8px}
+  .ans li .why{margin-left:0; white-space:normal}
+  .chip{font-size:.85rem}
+  .filters{flex-wrap:nowrap; overflow-x:auto; padding-bottom:4px; margin-left:-12px; margin-right:-12px; padding-left:12px; padding-right:12px; scrollbar-width:none}
+  .chip{flex:none}
 }
 </style>
 </head>
@@ -435,7 +534,8 @@ input[type=checkbox]{accent-color:var(--accent)}
       <div class="qcard" id="qcard"></div>
     </div>
     <aside class="seatmap">
-      <h3>Question map</h3>
+      <h3 class="map-head">Question map</h3>
+      <button class="map-toggle" id="mapToggle" aria-expanded="false" aria-controls="seats"><span><b>Question map</b><span class="sub" id="seatSubM"></span></span><span class="chev" aria-hidden="true"></span></button>
       <p class="sub" id="seatSub"></p>
       <div class="seats" id="seats"></div>
       <div class="legend" id="legend"><span><i></i>Not answered</span><span><i class="a"></i>Answered</span><span><i class="f"></i>Flagged</span></div>
@@ -1238,7 +1338,7 @@ function renderQ(){
   } else if(q.t==="order"){
     const N = q.items.length, pool = it.order.filter(k=>!it.picked.includes(k));
     h += `<p class="qhint">Move ${N} of the ${it.order.length} steps into your answer, in order. Some steps aren’t needed. Drag them, or click a step to add it.</p>`;
-    h += `<div class="ord"><div><h3>Steps</h3><ul class="ord-zone ord-pool" data-zone="pool">`;
+    h += `<div class="ord"><div><h3>Steps <small class="placed">${it.picked.length} of ${N} placed</small></h3><ul class="ord-zone ord-pool" data-zone="pool">`;
     h += pool.length ? pool.map(k=>`<li class="tok" draggable="${!showFb}" data-k="${k}"><button class="tok-add" data-add="${k}" ${showFb?"disabled":""}>${fmt(tokText(q,k))}</button></li>`).join("") : `<li class="slot">All steps used.</li>`;
     h += `</ul></div><div><h3>Your answer</h3><ol class="ord-zone ord-ans" data-zone="ans">`;
     for(let i=0;i<N;i++){
@@ -1265,7 +1365,7 @@ function renderQ(){
     h += `<div class="feedback ${correct?"ok":"bad"}"><b>${correct?"Correct.":"Not quite."}</b><p>${fmt(q.e)}</p><span class="src">Source: <a href="${SRC[q.s][1]}" target="_blank" rel="noopener">${esc(SRC[q.s][0])}</a></span></div>`;
   }
   h += `<div class="qnav"><div class="row"><button class="btn" id="prevBtn" ${S.idx===0?"disabled":""}>Previous</button>
-        <button class="btn ${it.flagged?"flagged":""}" id="flagBtn">${it.flagged?"Flagged for review":"Flag for review"}</button></div><div class="row">`;
+        <button class="btn ${it.flagged?"flagged":""}" id="flagBtn">${it.flagged?`Flagged<span class="lg"> for review</span>`:`Flag<span class="lg"> for review</span>`}</button></div><div class="row">`;
   if(S.mode==="practice" && !it.checked){
     h += `<button class="btn primary" id="checkBtn" ${isDone(it)?"":"disabled"}>Check answer</button>`;
   } else if(S.idx < S.items.length-1){
@@ -1350,10 +1450,12 @@ function bindOrder(q, it){
   });
 }
 
+function closeMapOnPhone(){ if(matchMedia("(max-width:640px)").matches){ const sm=$("mapToggle").closest(".seatmap"); sm.classList.remove("open"); $("mapToggle").setAttribute("aria-expanded","false"); window.scrollTo(0,0); } }
 function renderSeats(){
   const answered = S.items.filter(isDone).length;
   const flagged = S.items.filter(it=>it.flagged).length;
   $("seatSub").textContent = `${answered} answered, ${flagged} flagged`;
+  $("seatSubM").textContent = `${answered} of ${S.items.length} answered, ${flagged} flagged`;
   $("seats").innerHTML = S.items.map((it,i)=>{
     let c = "seat";
     if(S.mode==="practice" && it.checked) c += isOk(BANK[it.qid], it) ? " right" : " wrong";
@@ -1362,7 +1464,7 @@ function renderSeats(){
     if(i===S.idx) c += " current";
     return `<button class="${c}" data-i="${i}" aria-label="Question ${i+1}">${i+1}</button>`;
   }).join("");
-  $("seats").querySelectorAll(".seat").forEach(b=> b.onclick = ()=>go(+b.dataset.i));
+  $("seats").querySelectorAll(".seat").forEach(b=> b.onclick = ()=>{ go(+b.dataset.i); closeMapOnPhone(); });
 }
 
 function openReview(){
@@ -1545,6 +1647,7 @@ $("startWeak").onclick = ()=>{
     .sort((a,b)=>(db.miss[b]-(db.hit[b]||0))-(db.miss[a]-(db.hit[a]||0))).slice(0,20).map(Number);
   startSession("practice", shuffle(ids.map(i=>BANK[i]).filter(Boolean)), "Most-missed questions");
 };
+$("mapToggle").onclick = ()=>{ const sm=$("mapToggle").closest(".seatmap"); const open=!sm.classList.contains("open"); sm.classList.toggle("open", open); $("mapToggle").setAttribute("aria-expanded", open); };
 $("toReview").onclick = ()=> S.mode==="exam" ? openReview() : finish(false);
 $("quit").onclick = ()=>{ if(confirm("Leave this session? Your answers won’t be saved.")){ clearInterval(tick); S=null; renderHome(); show("home"); } };
 $("backToExam").onclick = ()=>{ show("exam"); S.qStart=Date.now(); renderQ(); renderSeats(); };
